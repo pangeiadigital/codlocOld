@@ -1,4 +1,4 @@
-# CODLOC<sup>®</sup> - Código de Localização
+# CODLOC<sup>®</sup> - Código de Localização, por PangeIA Digital
 
 O CODLOC<sup>®</sup> é um código de geolocalização baseado em coordenadas GNSS criado com o objetivo de ser utilizado como uma espécia de CEP<sup>®</sup> em versão digital - acessado por meio de canais digitais e em formato aberto e gratuito - permitindo a localização de pessoas e empresas independentemente se possuírem ou não um endereço formal. Entende-se neste contexto por um endereço formal um local físico declarado em comprovantes de residência aceitos comumente como referenciais de residência ou localização fiscal.
 A partir da obtenção de coordenadas georreferenciadas - seja por meio de aparelhos eletrônicos com receptores GNSS ou de registros em bancos de dados com pares de coordenadas -, um algoritmo faz a transformação destas coordenadas georreferenciadas em códigos curtos de localização alfanuméricos - e vice-versa. No caso do Brasil, é possível ainda usar três palavras da língua portuguesa como um apelido localizador, facilitando-se o uso popular desta solução.
@@ -31,8 +31,7 @@ Para infomações técnicas, acesse as páginas correspondentes.
 > CODLOC<sup>®</sup> - Código de Localização - é uma marca registrada da Pangeia Inteligência em Dados e Tecnologia da Informação ("PangeIA Digital").
 
 ---
-**Autoria**:
+**Referências**:
 
-PangeIA Digital
-
-Protegido pela [BSD 3-Clause Clear License](https://choosealicense.com/licenses/bsd-3-clause-clear/)
+[1] Jakub Červený. Gilbert - Generalized Hilbert Space-filling curves. Disponível [aqui](https://github.com/jakubcerveny/gilbert) sob a licença "2-clause BSD license".
+[2] IBGE - Instituto Brasileiro de Geografia e Estatística.
