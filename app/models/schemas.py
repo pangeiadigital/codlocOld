@@ -2,9 +2,7 @@
 
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
-
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-
+from pydantic import BaseModel, Field, field_validator
 from app.core.config import settings
 
 

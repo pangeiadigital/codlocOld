@@ -62,7 +62,7 @@ def encode(payload: EncodeRequest, request: Request) -> EncodeResponse:
     if is_outside:
         raise HTTPException(
             status_code=422, 
-            detail="Coordenada fora da área de cobertura do CODLOC."
+            detail="Coordinates outside the CODLOC coverage area."
         )
 
     try:
