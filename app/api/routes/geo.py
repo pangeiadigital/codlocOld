@@ -4,7 +4,7 @@ from typing import Tuple
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from pyproj import Transformer
-
+from app.core.config import settings
 from app.core.gilbert import math_decode, math_encode
 from app.models.schemas import (
     CRSObject,
@@ -14,10 +14,11 @@ from app.models.schemas import (
     EncodeRequest,
     EncodeResponse,
     GeoJSONFeature,
+    GeoJSONFeatureWithCRS,
     GeoJSONGeometry,
     NeighborRequest,
     NeighborResponse,
-    normalize_crs,
+    validate_crs_support,
 )
 from app.services.geospatial_service import find_neighbors, tile_size_at_depth
 
@@ -35,9 +36,9 @@ def get_transformer_pair(request: Request, crs_name: str) -> Tuple[Transformer, 
 def build_crs_object(crs_name: str) -> CRSObject:
     """Builds the GeoJSON CRS object with the appropriate EPSG URN."""
     # Map internal names to OGC URNs
-    if crs_name == "SIRGAS 2000":
+    if crs_name == "4674":
         urn = "urn:ogc:def:crs:EPSG::4674"
-    elif crs_name == "WGS 84":
+    elif crs_name == "4326":
         urn = "urn:ogc:def:crs:EPSG::4326"
     else:
         # Fallback to SIRGAS 2000 if unknown
@@ -52,6 +53,17 @@ def encode(payload: EncodeRequest, request: Request) -> EncodeResponse:
     forward, _ = get_transformer_pair(request, payload.crsInput)
     
     projected_x, projected_y = forward.transform(payload.lon, payload.lat)
+
+    is_outside = (
+        projected_x < settings.X_MIN or projected_x > settings.X_MAX or
+        projected_y < settings.Y_MIN or projected_y > settings.Y_MAX
+    )
+
+    if is_outside:
+        raise HTTPException(
+            status_code=422, 
+            detail="Coordenada fora da área de cobertura do CODLOC."
+        )
 
     try:
         codloc_hash, _, _ = math_encode(projected_x, projected_y, payload.precision)
@@ -93,15 +105,15 @@ def decode(payload: DecodeRequest, request: Request) -> DecodeResponse:
     )
 
 
-@router.get("/geojson/{codloc_value}", response_model=GeoJSONFeature)
+@router.get("/geojson/{codloc_value}", response_model=GeoJSONFeatureWithCRS)
 def geojson(
     codloc_value: str, 
     request: Request,
-    crsOutput: str = Query(default="SIRGAS 2000", description="Output CRS (WGS 84 or SIRGAS 2000)")
-) -> GeoJSONFeature:
+    crsOutput: str = Query(default="4674", description="Output CRS 4326 (WGS 84) or 4674 (SIRGAS 2000)")
+) -> GeoJSONFeatureWithCRS:
     """Returns a GeoJSON feature describing the tile using the specified output CRS."""
-    
-    normalized_crs = normalize_crs(crsOutput)
+
+    normalized_crs = validate_crs_support(crsOutput)
     _, inverse = get_transformer_pair(request, normalized_crs)
 
     try:
@@ -132,7 +144,8 @@ def geojson(
         "lat": lat,
         "lon": lon,
     }
-    return GeoJSONFeature(geometry=geometry, properties=properties, crs=crs_obj)
+    
+    return GeoJSONFeatureWithCRS(geometry=geometry, crs=crs_obj, properties=properties)
 
 
 @router.post("/neighbors", response_model=NeighborResponse)

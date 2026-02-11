@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from app.core.config import settings
 
@@ -21,21 +21,19 @@ class NeighborPredicate(str, Enum):
     INTERSECTS = "Intersects"
     WITHIN = "Within"
 
-
-def normalize_crs(v: Optional[str]) -> str:
-    """Normalizes CRS input to standard internal names. Defaults to SIRGAS 2000."""
+def validate_crs_support(v: Optional[str]) -> str:
+    """Normalizes CRS input to standard internal names."""
     if not v:
-        return "SIRGAS 2000"
+        return "4674"
     
     normalized = v.strip().upper()
     
-    if normalized in ["WGS 84", "4326", "WGS84"]:
-        return "WGS 84"
-    if normalized in ["SIRGAS 2000", "SIRGAS2000", "4674", "SIRGAS"]:
-        return "SIRGAS 2000"
-        
-    return "SIRGAS 2000"
-
+    if normalized in ["4326"]:
+        return "4326"
+    if normalized in ["4674"]:
+        return "4674"
+    
+    raise ValueError(f"Coordinate system not supported. Use '4326' (WGS 84) or '4674' (SIRGAS 2000).")
 
 class CRSProperty(BaseModel):
     """Properties for the CRS object."""
@@ -51,15 +49,15 @@ class CRSObject(BaseModel):
 class EncodeRequest(BaseModel):
     """Carries latitude, longitude, and precision parameters for encoding."""
 
-    lat: float = Field(..., description="Latitude.")
-    lon: float = Field(..., description="Longitude.")
-    precision: int = Field(..., ge=1, le=settings.MAX_PRECISION, description="Precision level.")
-    crsInput: Optional[str] = Field(default="SIRGAS 2000", description="Input CRS (WGS 84 or SIRGAS 2000). Defaults to SIRGAS 2000.")
+    lat: float = Field(..., ge=-90, le=90, description="Latitude entre -90 e 90.")
+    lon: float = Field(..., ge=-180, le=180, description="Longitude entre -180 e 180.")
+    precision: int = Field(..., ge=1, le=settings.MAX_PRECISION)
+    crsInput: Optional[str] = Field(default="4674", description="Input CRS 4326 (WGS 84) or 4674 (SIRGAS 2000).")
 
-    @field_validator('crsInput', mode='before')
+    @field_validator('crsInput')
     @classmethod
     def validate_crs(cls, v: Optional[str]) -> str:
-        return normalize_crs(v)
+        return validate_crs_support(v)
 
 
 class EncodeResponse(BaseModel):
@@ -77,12 +75,12 @@ class DecodeRequest(BaseModel):
     """Carries the geospatial hash to be decoded."""
 
     codloc: str
-    crsOutput: Optional[str] = Field(default="SIRGAS 2000", description="Output CRS. Defaults to SIRGAS 2000.")
+    crsOutput: Optional[str] = Field(default="4674", description="Output CRS. Defaults to 4674 (SIRGAS 2000).")
 
-    @field_validator('crsOutput', mode='before')
+    @field_validator('crsOutput')
     @classmethod
     def validate_crs(cls, v: Optional[str]) -> str:
-        return normalize_crs(v)
+        return validate_crs_support(v)
 
 
 class DecodeResponse(BaseModel):
@@ -101,9 +99,16 @@ class GeoJSONGeometry(BaseModel):
     type: Literal["Polygon"] = "Polygon"
     coordinates: List[List[List[float]]]
 
+class GeoJSONFeatureWithCRS(BaseModel):
+    """Represents a GeoJSON feature for a geohash tile."""
+
+    type: Literal["Feature"] = "Feature"
+    crs: CRSObject
+    geometry: GeoJSONGeometry
+    properties: Dict[str, Any]
 
 class GeoJSONFeature(BaseModel):
-    """Represents a GeoJSON feature for a geohash tile."""
+    """Represents a GeoJSON feature for a geohash tile inside Neighbor."""
 
     type: Literal["Feature"] = "Feature"
     geometry: GeoJSONGeometry
@@ -118,12 +123,12 @@ class NeighborRequest(BaseModel):
     neighborThreshold: float
     neighborPredicate: NeighborPredicate = NeighborPredicate.CENTROID
     neighborPrecision: int = Field(..., ge=1, le=settings.MAX_PRECISION)
-    crsOutput: Optional[str] = Field(default="SIRGAS 2000", description="Output CRS. Defaults to SIRGAS 2000.")
+    crsOutput: str = Field(default="4674", description="Output CRS. Defaults to 4674 (SIRGAS 2000.")
 
-    @field_validator('crsOutput', mode='before')
+    @field_validator('crsOutput')
     @classmethod
     def validate_crs(cls, v: Optional[str]) -> str:
-        return normalize_crs(v)
+        return validate_crs_support(v)
 
     @field_validator('neighborThreshold')
     @classmethod
@@ -149,7 +154,6 @@ class NeighborRequest(BaseModel):
             )
         
         return v
-
 
 class NeighborResponse(BaseModel):
     """Response containing the collection of neighboring features."""
