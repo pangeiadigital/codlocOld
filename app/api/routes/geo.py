@@ -2,8 +2,9 @@
 
 from typing import Tuple
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Depends
 from pyproj import Transformer
+from app.core.security import validate_token
 from app.core.config import settings
 from app.core.gilbert import math_decode, math_encode
 from app.models.schemas import (
@@ -22,8 +23,7 @@ from app.models.schemas import (
 )
 from app.services.geospatial_service import find_neighbors, tile_size_at_depth
 
-router = APIRouter(prefix="/geo", tags=["Geospatial"])
-
+router = APIRouter(prefix="/geo", tags=["Geospatial"], dependencies=[Depends(validate_token)])
 
 def get_transformer_pair(request: Request, crs_name: str) -> Tuple[Transformer, Transformer]:
     """Retrieves the (forward, inverse) transformer pair for the specified CRS."""
