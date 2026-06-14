@@ -23,7 +23,8 @@ from app.models.schemas import (
 )
 from app.services.geospatial_service import find_neighbors, tile_size_at_depth
 
-router = APIRouter(prefix="/geo", tags=["Geospatial"], dependencies=[Depends(validate_token)])
+#router = APIRouter(prefix="/geo", tags=["Geospatial"], dependencies=[Depends(validate_token)])
+router = APIRouter(prefix="/geo", tags=["Geospatial"])
 
 def get_transformer_pair(request: Request, crs_name: str) -> Tuple[Transformer, Transformer]:
     """Retrieves the (forward, inverse) transformer pair for the specified CRS."""
