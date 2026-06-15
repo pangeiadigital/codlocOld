@@ -45,10 +45,27 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 def create_application() -> FastAPI:
     """Creates and configures the FastAPI application instance."""
+    
+    description = """
+## What is CODLOC?
+
+CODLOC<sup>&reg;</sup> is a system of codes and short names for geographic locations transformed from GNSS coordinates. For more information, visit [codloc.com](https://codloc.com).
+
+## Personas
+
+For individual users, an APP and a connected [webpage](https://app.codloc.com) are available for simple one-off queries, without the need for registration and/or authentication.
+
+For users representing legal entities, access is controlled through authentication.
+
+## Copyright &copy;
+
+O CODLOC<sup>&reg;</sup> is a registered trademark of [PangeIA Digital](https://pangeia.digital)
+    """
+
     app = FastAPI(
-        title="Geospatial Hashing Service",
-        description="Encode and decode Gilbert-based Base36 geohashes with Multi-CRS support.",
-        version="1.1.0",
+        title="CODLOC API Service",
+        description=description.strip(),
+        version="1.0.0",
         docs_url="/swagger",
         redoc_url="/docs",
         lifespan=lifespan,
