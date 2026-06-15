@@ -24,7 +24,7 @@ from app.models.schemas import (
 from app.services.geospatial_service import find_neighbors, tile_size_at_depth
 
 #router = APIRouter(prefix="/geo", tags=["Geospatial"], dependencies=[Depends(validate_token)])
-router = APIRouter(prefix="/geo", tags=["Geospatial"])
+router = APIRouter(prefix="/geo")
 
 def get_transformer_pair(request: Request, crs_name: str) -> Tuple[Transformer, Transformer]:
     """Retrieves the (forward, inverse) transformer pair for the specified CRS."""
@@ -48,7 +48,18 @@ def build_crs_object(crs_name: str) -> CRSObject:
     return CRSObject(properties=CRSProperty(name=urn))
 
 
-@router.post("/encode", response_model=EncodeResponse)
+@router.post(
+    "/encode",
+    response_model=EncodeResponse,
+    tags=["Unitary Mode"],
+    summary="Encodes latitude and longitude to discover a CODLOC",
+    description=(
+        "**Encodes latitude and longitude into a CODLOC using the specified input Coordinate Reference System (CRS)**.\n"
+        "\n"
+        "Please see the schema and domains on Schemas section."
+    ),
+    operation_id="post_unitary_encode"
+)
 def encode(payload: EncodeRequest, request: Request) -> EncodeResponse:
     """Encodes coordinates into a codloc using the specified input CRS."""
     forward, _ = get_transformer_pair(request, payload.crsInput)
@@ -82,7 +93,18 @@ def encode(payload: EncodeRequest, request: Request) -> EncodeResponse:
     )
 
 
-@router.post("/decode", response_model=DecodeResponse)
+@router.post(
+    "/decode",
+    response_model=DecodeResponse,
+    tags=["Unitary Mode"],
+    summary="Decode CODLOC to discover latitude and longitude coordinates",
+    description=(
+        "**Decodes CODLOC into latitude and longitude coordinates using the specified output Coordinate Reference System (CRS)**.\n"
+        "\n"
+        "Please see the schema and domains on Schemas section."
+    ),
+    operation_id="post_unitary_decode"
+)
 def decode(payload: DecodeRequest, request: Request) -> DecodeResponse:
     """Decodes a codloc back to coordinates in the specified output CRS."""
     _, inverse = get_transformer_pair(request, payload.crsOutput)
@@ -106,7 +128,18 @@ def decode(payload: DecodeRequest, request: Request) -> DecodeResponse:
     )
 
 
-@router.get("/geojson/{codloc_value}", response_model=GeoJSONFeatureWithCRS)
+@router.get(
+    "/geojson/{codloc_value}",
+    response_model=GeoJSONFeatureWithCRS,
+    tags=["Unitary Mode"],
+    summary="Returns a single geo-object tile given a CODLOC",
+    description=(
+        "**Returns a geo-object as GeoJSON format describing the tile using the specified output Coordinate Reference System (CRS)**.\n"
+        "\n"
+        "Please see the schema and domains on Schemas section."
+    ),
+    operation_id="get_unitary_tile"
+)
 def geojson(
     codloc_value: str, 
     request: Request,
@@ -149,7 +182,24 @@ def geojson(
     return GeoJSONFeatureWithCRS(geometry=geometry, crs=crs_obj, properties=properties)
 
 
-@router.post("/neighbors", response_model=NeighborResponse)
+@router.post(
+    "/neighbors",
+    response_model=NeighborResponse,
+    tags=["Multiple Mode"],
+    summary="Neighbors Search",
+    description=(
+        "**Finds neighboring CODLOCs and returns coordinates and its tiles in the specified output Coordinate Reference System (CRS)**.\n"
+        "\n"
+        "- For search neighbors by **proximity/distance**, use the combination _neighborMethod_ = _**'Radius'**_ and _neighborPredicate_ = _**'Centroid'**_ and _neighborThreshold_ = _**'[values greater than zero]'**_ to radius in meters\n"
+        "\n"
+        "- For search neighbors by **location/shared boundaries**, use the combination _neighborMethod_ = _**'Queen'**_ or _**'Rook'**_ and _neighborPredicate_ = _**'Intersects'**_ or _**'Within'**_ and _neighborThreshold_ = _**'[values greater than zero]'**_ to number of neighbors desired to reach\n"
+        "\n"
+        "**OBS**: Note that the choice of precision can affect the result. It is advisable to search for neighbors at the same level or lower with respect to the reference/input CODLOC.\n"
+        "\n"
+        "Please see the schema and domains on Schemas section."
+    ),
+    operation_id="post_multiple_neighbors"
+)
 def neighbors(payload: NeighborRequest, request: Request) -> NeighborResponse:
     """Finds neighboring tiles and returns coordinates in the specified output CRS."""
     _, inverse = get_transformer_pair(request, payload.crsOutput)
