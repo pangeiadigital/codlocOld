@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes.geo import router as geo_router
+from app.api.routes.itacart import router as itacart_router
 from app.core.crs import build_transformers
 
 
@@ -82,6 +83,7 @@ O CODLOC<sup>&reg;</sup> is a registered trademark of [PangeIA Digital](https://
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     
     app.include_router(geo_router)
+    app.include_router(itacart_router, prefix="/v2/itacart", tags=["ITACaRT"])
     return app
 
 

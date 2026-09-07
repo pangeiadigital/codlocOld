@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Global application settings."""
 
-    # grid config
+    # legacy codloc config
     GRID_BASE: int = 6
     MAX_PRECISION: int = 9
 
@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     Y_MIN: float = 4_528_175.0
     X_MAX: float = 10_685_615.0
     Y_MAX: float = 14_605_871.0
+    
+    # ITACaRT settings
+    ITACART_MAX_PRECISION: int = 9  # User requested maximum level 9 (1m²)
+    ITACART_BASE_CELL_SIDE: float = 10_000.0  # 10 km
 
     # limits - max tiles to process in a single request
     MAX_NEIGHBOR_TILES: int = 2500
