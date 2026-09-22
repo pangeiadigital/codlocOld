@@ -7,7 +7,7 @@ down to 1 m² (depth 9).
 
 Three hash representations are produced:
   • **Canonical** — human-readable, with parentheses:
-        ``SW(0513/0174(3(C2(1(B4(4(D5(2(A1)))))))))``
+        ``SW(0513-0174(3(C2(1(B4(4(D5(2(A1)))))))))``
   • **Compact**  — 10-char base36 string for URLs / sharing:
         ``A7G3K0X2P1``
   • **Storage**  — 64-bit integer packed representation.
@@ -110,7 +110,7 @@ def encode(
     origin_y = base_iy * BASE_CELL_SIZE
 
     # 6. Build canonical parts and collect subdivision indices
-    canonical_parts: List[str] = [f"{quadrant}({base_ix:04d}/{base_iy:04d}"]
+    canonical_parts: List[str] = [f"{quadrant}({base_ix:04d}-{base_iy:04d}"]
     subdivisions: Dict[int, int] = {}  # level → linear index (0-based)
 
     for level in range(2, depth + 1):
@@ -177,7 +177,7 @@ def decode_canonical(hash_str: str) -> Dict:
     Parameters
     ----------
     hash_str : str
-        Canonical hash, e.g. ``SW(0513/0174(3(C2)))``.
+        Canonical hash, e.g. ``SW(0513-0174(3(C2)))``.
 
     Returns
     -------
@@ -309,11 +309,14 @@ def _parse_canonical(hash_str: str) -> Dict:
     # Strip all closing parens from the end
     inner = rest.lstrip("(").rstrip(")")
 
-    # Base cell: XXXX/YYYY
-    slash_pos = inner.index("/")
-    base_ix = int(inner[:slash_pos])
+    # Base cell: XXXX-YYYY (or legacy XXXX/YYYY)
+    sep = "-" if "-" in inner else "/"
+    if sep not in inner:
+        raise ValueError(f"Expected '-' separator between base cell indices, got: '{inner[:10]}'")
+    sep_pos = inner.index(sep)
+    base_ix = int(inner[:sep_pos])
 
-    remaining = inner[slash_pos + 1:]
+    remaining = inner[sep_pos + 1:]
 
     # Parse base_iy (digits until '(' or end)
     iy_end = 0
@@ -454,7 +457,7 @@ def _rebuild_canonical(parsed: Dict) -> str:
     if depth == 0:
         return parsed["quadrant"]
 
-    parts = [f"{parsed['quadrant']}({parsed['base_ix']:04d}/{parsed['base_iy']:04d}"]
+    parts = [f"{parsed['quadrant']}({parsed['base_ix']:04d}-{parsed['base_iy']:04d}"]
 
     for level in range(2, depth + 1):
         sub = parsed["subdivisions"].get(level)

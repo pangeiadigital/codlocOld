@@ -26,9 +26,9 @@ def validate_crs_support(v: Optional[str]) -> str:
     
     normalized = v.strip().upper()
     
-    if normalized in ["4326"]:
+    if normalized in ["4326", "WGS 84", "WGS84", "EPSG:4326", "EPSG::4326"]:
         return "4326"
-    if normalized in ["4674"]:
+    if normalized in ["4674", "SIRGAS 2000", "SIRGAS2000", "SIRGAS", "EPSG:4674", "EPSG::4674"]:
         return "4674"
     
     raise ValueError(f"Coordinate system not supported. Use '4326' (WGS 84) or '4674' (SIRGAS 2000).")
